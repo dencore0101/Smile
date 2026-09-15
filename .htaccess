@@ -1,0 +1,18 @@
+# Deny access to storage and config
+RewriteEngine On
+
+# Block direct access to storage
+RewriteRule ^storage/ - [F,L]
+
+# Block direct access to config files
+RewriteRule ^config\.local\.php$ - [F,L]
+RewriteRule ^includes/ - [F,L]
+
+# Block access to .env
+RewriteRule ^\.env$ - [F,L]
+
+# Block access to logs
+RewriteRule ^logs/ - [F,L]
+
+# Disable directory listing
+Options -Indexes

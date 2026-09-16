@@ -37,8 +37,14 @@ function do_login(string $username, string $password): bool {
         $stmt = $db->prepare('SELECT * FROM users WHERE username = ?');
         $stmt->execute([$username]);
         $user = $stmt->fetch();
-        if (!$user) return false;
-        if (!password_verify($password, $user['password_hash'])) return false;
+        if (!$user) {
+            log_error('Auth', "Failed login: username '$username' not found", __FILE__, __LINE__);
+            return false;
+        }
+        if (!password_verify($password, $user['password_hash'])) {
+            log_error('Auth', "Failed login: wrong password for '$username'", __FILE__, __LINE__);
+            return false;
+        }
         session_regenerate_id(true);
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['username'];

@@ -295,6 +295,9 @@ $diskFree = @disk_free_space(APP_ROOT);
 <div class="section">
     <div class="section-header"><div class="section-title">Debug & System Health</div></div>
     <div class="section-body">
+        <div class="mb-4">
+            <a href="debug.php" class="btn btn-primary">Open Debug Page</a>
+        </div>
         <form method="post" style="display:flex; gap:8px; align-items:center; margin-bottom:16px;">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="debug">
@@ -341,12 +344,36 @@ $diskFree = @disk_free_space(APP_ROOT);
 <div class="section">
     <div class="section-header"><div class="section-title">Data Export</div></div>
     <div class="section-body">
+        <p class="text-sm text-muted mb-4">Export data as CSV spreadsheets or as a combined JSON file (for LLM analysis). Optional date range filters all exports.</p>
+        <form method="get" action="export.php" style="display:flex; gap:8px; align-items:end; flex-wrap:wrap; margin-bottom:16px;">
+            <div class="form-group" style="margin:0">
+                <label>From Date (optional)</label>
+                <input type="date" name="from" value="" style="width:auto">
+            </div>
+            <div class="form-group" style="margin:0">
+                <label>To Date (optional)</label>
+                <input type="date" name="to" value="" style="width:auto">
+            </div>
+            <div class="form-group" style="margin:0">
+                <label>Export Type</label>
+                <select name="type" style="width:auto">
+                    <option value="full_json">Combined JSON (all data, nested)</option>
+                    <option value="patients">Patients CSV</option>
+                    <option value="treatments">Treatments CSV (with derived fields)</option>
+                    <option value="payments">Payments CSV</option>
+                    <option value="expenses">Expenses CSV (with lab/consultant)</option>
+                    <option value="followups">Follow-ups CSV</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Download</button>
+        </form>
         <div class="flex gap-2 flex-wrap">
-            <a href="export.php?type=patients" class="btn btn-sm btn-outline">Export Patients</a>
-            <a href="export.php?type=treatments" class="btn btn-sm btn-outline">Export Treatments</a>
-            <a href="export.php?type=payments" class="btn btn-sm btn-outline">Export Payments</a>
-            <a href="export.php?type=expenses" class="btn btn-sm btn-outline">Export Expenses</a>
-            <a href="export.php?type=followups" class="btn btn-sm btn-outline">Export Follow-ups</a>
+            <a href="export.php?type=full_json" class="btn btn-sm btn-primary">Combined JSON (all-time)</a>
+            <a href="export.php?type=patients" class="btn btn-sm btn-outline">Patients CSV</a>
+            <a href="export.php?type=treatments" class="btn btn-sm btn-outline">Treatments CSV</a>
+            <a href="export.php?type=payments" class="btn btn-sm btn-outline">Payments CSV</a>
+            <a href="export.php?type=expenses" class="btn btn-sm btn-outline">Expenses CSV</a>
+            <a href="export.php?type=followups" class="btn btn-sm btn-outline">Follow-ups CSV</a>
         </div>
     </div>
 </div>

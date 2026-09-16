@@ -8,6 +8,13 @@ init_session();
 require_auth();
 
 $page = basename($_SERVER['PHP_SELF'], '.php');
+
+$owner_only_pages = ['reports', 'expenses', 'expense_new', 'expense_edit', 'expense_delete', 'export', 'backup_download', 'backup_restore', 'labs', 'consultants', 'settings', 'debug'];
+if (in_array($page, $owner_only_pages, true) && !is_owner()) {
+    set_flash('error', 'Access denied. Owner privileges required.');
+    redirect('today.php');
+}
+
 $nav_items = [
     'today' => 'Today',
     'patients' => 'Patients',
@@ -17,6 +24,7 @@ if (is_owner()) {
     $nav_items['expenses'] = 'Expenses';
     $nav_items['reports'] = 'Reports';
     $nav_items['settings'] = 'Settings';
+    $nav_items['debug'] = 'Debug';
 }
 ?>
 <!DOCTYPE html>

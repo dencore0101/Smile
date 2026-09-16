@@ -7,10 +7,14 @@ $db = db();
 if ($search !== '') {
     $stmt = $db->prepare("SELECT p.*,
                           (SELECT t.name FROM treatments t WHERE t.patient_id = p.id ORDER BY t.created_at DESC LIMIT 1) AS last_treatment,
-                          (SELECT COALESCE(SUM(t2.total_cost), 0) - COALESCE(SUM(pay.amount), 0)
-                           FROM treatments t2
-                           LEFT JOIN payments pay ON pay.treatment_id = t2.id AND pay.deleted_at IS NULL
-                           WHERE t2.patient_id = p.id) AS balance
+                          (
+                            (SELECT COALESCE(SUM(t2.total_cost), 0) FROM treatments t2 WHERE t2.patient_id = p.id)
+                            -
+                            (SELECT COALESCE(SUM(pay.amount), 0)
+                             FROM payments pay
+                             JOIN treatments t2 ON t2.id = pay.treatment_id
+                             WHERE t2.patient_id = p.id AND pay.deleted_at IS NULL)
+                          ) AS balance
                           FROM patients p
                           WHERE p.name LIKE ? OR p.mobile LIKE ? OR p.patient_id LIKE ?
                           ORDER BY p.name ASC LIMIT 50");
@@ -20,10 +24,14 @@ if ($search !== '') {
 } else {
     $stmt = $db->query("SELECT p.*,
                         (SELECT t.name FROM treatments t WHERE t.patient_id = p.id ORDER BY t.created_at DESC LIMIT 1) AS last_treatment,
-                        (SELECT COALESCE(SUM(t2.total_cost), 0) - COALESCE(SUM(pay.amount), 0)
-                         FROM treatments t2
-                         LEFT JOIN payments pay ON pay.treatment_id = t2.id AND pay.deleted_at IS NULL
-                         WHERE t2.patient_id = p.id) AS balance
+                        (
+                          (SELECT COALESCE(SUM(t2.total_cost), 0) FROM treatments t2 WHERE t2.patient_id = p.id)
+                          -
+                          (SELECT COALESCE(SUM(pay.amount), 0)
+                           FROM payments pay
+                           JOIN treatments t2 ON t2.id = pay.treatment_id
+                           WHERE t2.patient_id = p.id AND pay.deleted_at IS NULL)
+                        ) AS balance
                         FROM patients p
                         ORDER BY p.name ASC LIMIT 100");
     $patients = $stmt->fetchAll();

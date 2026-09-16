@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
         <div class="form-group">
             <label for="photo">Select Photo</label>
-            <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp" required capture="environment">
+            <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp" required>
         </div>
         <div class="form-group">
             <label for="note">Note (optional)</label>

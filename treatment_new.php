@@ -21,15 +21,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $startDate = trim($_POST['start_date'] ?? '') ?: today_date();
     $totalCost = (float)($_POST['total_cost'] ?? 0);
     $treatmentNotes = trim($_POST['treatment_notes'] ?? '');
+    $finalNotes = trim($_POST['final_notes'] ?? '');
 
     if ($name === '') $errors[] = 'Treatment name is required.';
 
     if (empty($errors)) {
         try {
             $db = db();
-            $stmt = $db->prepare("INSERT INTO treatments (patient_id, name, tooth_area, start_date, total_cost, treatment_notes)
-                                  VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$patientId, $name, $toothArea, $startDate, $totalCost, $treatmentNotes]);
+            $stmt = $db->prepare("INSERT INTO treatments (patient_id, name, tooth_area, start_date, total_cost, treatment_notes, final_notes)
+                                  VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$patientId, $name, $toothArea, $startDate, $totalCost, $treatmentNotes, $finalNotes]);
             set_flash('success', 'Treatment created.');
             redirect("patient.php?id=$patientId");
         } catch (Throwable $e) {
@@ -73,6 +74,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="form-group">
             <label for="treatment_notes">Treatment Notes</label>
             <textarea id="treatment_notes" name="treatment_notes" placeholder="Ongoing notes..."><?= e($_POST['treatment_notes'] ?? '') ?></textarea>
+        </div>
+        <div class="form-group">
+            <label for="final_notes">Final Notes</label>
+            <textarea id="final_notes" name="final_notes" placeholder="Final summary (can be filled later)..."><?= e($_POST['final_notes'] ?? '') ?></textarea>
         </div>
         <div class="form-actions">
             <a href="patient.php?id=<?= $patientId ?>" class="btn btn-outline">Cancel</a>

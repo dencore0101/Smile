@@ -12,10 +12,12 @@ $nav_items = [
     'today' => 'Today',
     'patients' => 'Patients',
     'followups' => 'Follow-ups',
-    'expenses' => 'Expenses',
-    'reports' => 'Reports',
-    'settings' => 'Settings',
 ];
+if (is_owner()) {
+    $nav_items['expenses'] = 'Expenses';
+    $nav_items['reports'] = 'Reports';
+    $nav_items['settings'] = 'Settings';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -30,7 +32,7 @@ $nav_items = [
     <div class="header-inner">
         <div class="header-brand"><a href="today.php"><?= e(clinic_name()) ?></a></div>
         <div class="header-user">
-            <span><?= e(current_username()) ?></span>
+            <span><?= e(current_username()) ?> (<?= e(ucfirst(current_role())) ?>)</span>
             <a href="logout.php">Logout</a>
         </div>
     </div>

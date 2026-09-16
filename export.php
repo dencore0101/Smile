@@ -6,6 +6,7 @@ require_once __DIR__ . '/includes/helpers.php';
 
 init_session();
 require_auth();
+require_owner();
 
 $type = $_GET['type'] ?? '';
 $db = db();

@@ -84,6 +84,32 @@ function get_expense_categories(): array {
     return $db->query('SELECT * FROM expense_categories ORDER BY name')->fetchAll();
 }
 
+function get_labs(): array {
+    $db = db();
+    return $db->query('SELECT * FROM labs ORDER BY name')->fetchAll();
+}
+
+function get_lab(int $id): ?array {
+    $db = db();
+    $stmt = $db->prepare('SELECT * FROM labs WHERE id = ?');
+    $stmt->execute([$id]);
+    $row = $stmt->fetch();
+    return $row ?: null;
+}
+
+function get_consultants(): array {
+    $db = db();
+    return $db->query('SELECT * FROM consultants ORDER BY name')->fetchAll();
+}
+
+function get_consultant(int $id): ?array {
+    $db = db();
+    $stmt = $db->prepare('SELECT * FROM consultants WHERE id = ?');
+    $stmt->execute([$id]);
+    $row = $stmt->fetch();
+    return $row ?: null;
+}
+
 function get_treatments_for_patient(int $patientId): array {
     $db = db();
     $stmt = $db->prepare('SELECT * FROM treatments WHERE patient_id = ? ORDER BY created_at DESC');

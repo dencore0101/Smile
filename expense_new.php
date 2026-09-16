@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/includes/header.php';
 
+require_owner();
+
 $patientId = (int)($_GET['patient_id'] ?? $_POST['patient_id'] ?? 0);
 $treatmentId = (int)($_GET['treatment_id'] ?? $_POST['treatment_id'] ?? 0);
 
@@ -18,6 +20,8 @@ if ($patientId) {
 }
 
 $categories = get_expense_categories();
+$labs = get_labs();
+$consultants = get_consultants();
 $treatments = $patientId ? get_treatments_for_patient($patientId) : [];
 $errors = [];
 
@@ -35,6 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $amount = (float)($_POST['amount'] ?? 0);
     $expenseDate = trim($_POST['expense_date'] ?? '') ?: today_date();
     $notes = trim($_POST['notes'] ?? '');
+    $labId = (int)($_POST['lab_id'] ?? 0);
+    $consultantId = (int)($_POST['consultant_id'] ?? 0);
 
     if ($categoryId === 0) $errors[] = 'Category is required.';
     if ($amount <= 0) $errors[] = 'Amount must be greater than 0.';
@@ -42,8 +48,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($errors)) {
         try {
             $db = db();
-            $stmt = $db->prepare("INSERT INTO expenses (patient_id, treatment_id, category_id, name_details, description, amount, expense_date, notes)
-                                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $db->prepare("INSERT INTO expenses (patient_id, treatment_id, category_id, name_details, description, amount, expense_date, notes, lab_id, consultant_id)
+                                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([
                 $patientId ?: null,
                 $treatmentId ?: null,
@@ -53,6 +59,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $amount,
                 $expenseDate,
                 $notes,
+                $labId ?: null,
+                $consultantId ?: null,
             ]);
             set_flash('success', 'Expense added.');
             if ($patientId) {
@@ -116,9 +124,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <input type="number" id="amount" name="amount" step="0.01" min="0.01" required value="<?= e($_POST['amount'] ?? '') ?>" autofocus>
             </div>
         </div>
+
+        <div class="form-row">
+            <div class="form-group" id="lab-select-group" style="display:none">
+                <label for="lab_id">Lab</label>
+                <select id="lab_id" name="lab_id">
+                    <option value="">— Select Lab —</option>
+                    <?php foreach ($labs as $l): ?>
+                    <option value="<?= $l['id'] ?>"><?= e($l['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="text-sm text-muted mt-2"><a href="labs.php">Manage Labs</a></p>
+            </div>
+            <div class="form-group" id="consultant-select-group" style="display:none">
+                <label for="consultant_id">Consultant</label>
+                <select id="consultant_id" name="consultant_id">
+                    <option value="">— Select Consultant —</option>
+                    <?php foreach ($consultants as $c): ?>
+                    <option value="<?= $c['id'] ?>"><?= e($c['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="text-sm text-muted mt-2"><a href="consultants.php">Manage Consultants</a></p>
+            </div>
+        </div>
+
         <div class="form-group">
             <label for="name_details">Name / Details</label>
-            <input type="text" id="name_details" name="name_details" value="<?= e($_POST['name_details'] ?? '') ?>" placeholder="e.g. ABC Dental Lab, Dr XYZ">
+            <input type="text" id="name_details" name="name_details" value="<?= e($_POST['name_details'] ?? '') ?>" placeholder="e.g. Zirconia crown, or auto-filled from Lab/Consultant">
         </div>
         <div class="form-row">
             <div class="form-group">
@@ -140,5 +172,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </form>
 </div>
+
+<script>
+// Show lab/consultant select based on category name
+document.getElementById('category_id').addEventListener('change', function() {
+    var text = this.options[this.selectedIndex].text.toLowerCase();
+    document.getElementById('lab-select-group').style.display = text === 'lab' ? '' : 'none';
+    document.getElementById('consultant-select-group').style.display = text === 'consultant' ? '' : 'none';
+});
+// Trigger on load
+document.getElementById('category_id').dispatchEvent(new Event('change'));
+</script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

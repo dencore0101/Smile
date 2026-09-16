@@ -11,13 +11,22 @@ if (!$patient) {
 $db = db();
 $treatments = get_treatments_for_patient($id);
 $photos = get_photos_for_patient($id);
-$patientExpenses = get_expenses_for_patient($id);
 $followups = get_followups_for_patient($id);
 
 $totalCost = patient_total_cost($id);
 $totalPaid = patient_total_paid($id);
-$totalExpenses = patient_total_expenses($id);
 $balance = $totalCost - $totalPaid;
+
+$isOwner = is_owner();
+
+// Only fetch expense data for owner
+if ($isOwner) {
+    $patientExpenses = get_expenses_for_patient($id);
+    $totalExpenses = patient_total_expenses($id);
+} else {
+    $patientExpenses = [];
+    $totalExpenses = 0;
+}
 
 // Handle inline edit of basic info / free notes
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -58,7 +67,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <a href="treatment_new.php?patient_id=<?= $id ?>" class="btn btn-primary btn-sm">+ New Treatment</a>
         <a href="photo_upload.php?patient_id=<?= $id ?>" class="btn btn-outline btn-sm">+ Add Photo</a>
         <a href="followup_new.php?patient_id=<?= $id ?>" class="btn btn-outline btn-sm">+ Add Follow-up</a>
+        <?php if ($isOwner): ?>
         <a href="expense_new.php?patient_id=<?= $id ?>" class="btn btn-outline btn-sm">+ Add Expense</a>
+        <?php endif; ?>
         <button type="button" class="btn btn-outline btn-sm" onclick="openModal('editBasicModal')">Edit Details</button>
     </div>
 </div>
@@ -77,10 +88,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="stat-label">Balance</div>
         <div class="stat-value <?= $balance > 0 ? 'negative' : 'positive' ?>"><?= format_money($balance) ?></div>
     </div>
+    <?php if ($isOwner): ?>
     <div class="stat-card">
         <div class="stat-label">Patient Expenses</div>
         <div class="stat-value negative"><?= format_money($totalExpenses) ?></div>
     </div>
+    <?php endif; ?>
 </div>
 
 <!-- Basic Details -->
@@ -158,13 +171,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php else: ?>
             <?php foreach ($treatments as $t):
                 $paid = treatment_paid($t['id']);
-                $exp = treatment_expenses($t['id']);
                 $bal = $t['total_cost'] - $paid;
-                $margin = $t['total_cost'] - $exp;
                 $tPhotos = get_photos_for_treatment($t['id']);
                 $tPayments = get_payments_for_treatment($t['id']);
-                $tExpenses = get_expenses_for_treatment($t['id']);
                 $tFollowups = $db->query("SELECT * FROM followups WHERE treatment_id = {$t['id']} ORDER BY date DESC")->fetchAll();
+                // Only fetch expense data for owner
+                if ($isOwner) {
+                    $exp = treatment_expenses($t['id']);
+                    $margin = $t['total_cost'] - $exp;
+                    $tExpenses = get_expenses_for_treatment($t['id']);
+                } else {
+                    $exp = 0;
+                    $margin = 0;
+                    $tExpenses = [];
+                }
             ?>
             <div class="treatment-card">
                 <div class="treatment-card-header" onclick="this.parentElement.querySelector('.treatment-card-body').classList.toggle('hidden')">
@@ -192,7 +212,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="flex gap-2 flex-wrap mb-4">
                         <a href="treatment_edit.php?id=<?= $t['id'] ?>" class="btn btn-sm btn-outline">Edit Treatment</a>
                         <a href="payment_new.php?treatment_id=<?= $t['id'] ?>" class="btn btn-sm btn-primary">+ Add Payment</a>
+                        <?php if ($isOwner): ?>
                         <a href="expense_new.php?treatment_id=<?= $t['id'] ?>" class="btn btn-sm btn-outline">+ Add Expense</a>
+                        <?php endif; ?>
                         <a href="photo_upload.php?treatment_id=<?= $t['id'] ?>&patient_id=<?= $id ?>" class="btn btn-sm btn-outline">+ Add Photo</a>
                         <a href="followup_new.php?treatment_id=<?= $t['id'] ?>&patient_id=<?= $id ?>" class="btn btn-sm btn-outline">+ Add Follow-up</a>
                         <?php if ($t['status'] === 'Active'): ?>
@@ -214,14 +236,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="label">Balance</div>
                             <div class="value <?= $bal > 0 ? 'text-danger' : '' ?>"><?= format_money($bal) ?></div>
                         </div>
+                        <?php if ($isOwner): ?>
                         <div class="money-item">
                             <div class="label">Expenses</div>
                             <div class="value text-danger"><?= format_money($exp) ?></div>
                         </div>
                         <div class="money-item">
-                            <div class="label">Margin</div>
+                            <div class="label">Treatment Margin</div>
                             <div class="value"><?= format_money($margin) ?></div>
                         </div>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Payments -->
@@ -262,7 +286,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <p class="text-muted text-sm mb-4">No payments yet.</p>
                     <?php endif; ?>
 
-                    <!-- Expenses -->
+                    <?php if ($isOwner): ?>
+                    <!-- Expenses (Owner only) -->
                     <h3>Expenses (<?= count($tExpenses) ?>)</h3>
                     <?php if (!empty($tExpenses)): ?>
                     <div class="table-wrap mb-4">
@@ -298,6 +323,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     <?php else: ?>
                     <p class="text-muted text-sm mb-4">No expenses for this treatment.</p>
+                    <?php endif; ?>
                     <?php endif; ?>
 
                     <!-- Treatment notes -->
@@ -419,7 +445,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </div>
 
-<!-- Patient-level Expenses -->
+<?php if ($isOwner): ?>
+<!-- Patient-level Expenses (Owner only) -->
 <div class="section">
     <div class="section-header">
         <div class="section-title">All Patient Expenses (<?= count($patientExpenses) ?>)</div>
@@ -465,6 +492,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
     </div>
 </div>
+<?php endif; ?>
 
 <!-- Follow-ups -->
 <div class="section">

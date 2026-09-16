@@ -6,6 +6,7 @@ require_once __DIR__ . '/includes/helpers.php';
 
 init_session();
 require_auth();
+require_owner();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !csrf_check()) {
     set_flash('error', 'Invalid request.');

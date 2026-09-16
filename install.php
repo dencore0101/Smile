@@ -82,9 +82,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($step === 'install')) {
                 $stmt->execute([$k, $v]);
             }
 
-            // Create user
+            // Create owner user
             $hash = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $pdo->prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)');
+            $stmt = $pdo->prepare("INSERT INTO users (username, password_hash, role) VALUES (?, ?, 'owner')");
             $stmt->execute([$username, $hash]);
 
             // Create config file

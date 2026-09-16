@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/includes/header.php';
 
+require_owner();
+
 $db = db();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -36,6 +38,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('settings.php');
     }
 
+    if ($action === 'assistant_password') {
+        $new = $_POST['assistant_password'] ?? '';
+        if (strlen($new) < 6) {
+            set_flash('error', 'Assistant password must be at least 6 characters.');
+        } elseif (!set_assistant_password($new)) {
+            set_flash('error', 'Could not set assistant password.');
+        } else {
+            set_flash('success', 'Assistant password set. Username: assistant');
+        }
+        redirect('settings.php');
+    }
+
     if ($action === 'add_category') {
         $name = trim($_POST['cat_name'] ?? '');
         if ($name === '') {
@@ -52,12 +66,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('settings.php');
     }
 
+    if ($action === 'edit_category') {
+        $catId = (int)$_POST['cat_id'];
+        $name = trim($_POST['cat_name'] ?? '');
+        if ($name === '') {
+            set_flash('error', 'Category name is required.');
+        } else {
+            try {
+                $stmt = $db->prepare("UPDATE expense_categories SET name = ? WHERE id = ?");
+                $stmt->execute([$name, $catId]);
+                set_flash('success', 'Category updated.');
+            } catch (Throwable $e) {
+                set_flash('error', 'Category name already exists.');
+            }
+        }
+        redirect('settings.php');
+    }
+
     if ($action === 'delete_category') {
         $catId = (int)$_POST['cat_id'];
         $stmt = $db->prepare("SELECT COUNT(*) FROM expenses WHERE category_id = ? AND deleted_at IS NULL");
         $stmt->execute([$catId]);
         if ((int)$stmt->fetchColumn() > 0) {
-            set_flash('error', 'Cannot delete: expenses exist in this category.');
+            set_flash('error', 'Cannot delete: expenses exist in this category. Remove or reassign expenses first.');
         } else {
             $stmt = $db->prepare("DELETE FROM expense_categories WHERE id = ?");
             $stmt->execute([$catId]);
@@ -83,9 +114,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $categories = get_expense_categories();
+$labs = get_labs();
+$consultants = get_consultants();
 $debugMode = setting('debug_mode', '0') === '1';
 $logContent = file_exists(LOG_FILE) ? file_get_contents(LOG_FILE) : '';
 $logSize = file_exists(LOG_FILE) ? filesize(LOG_FILE) : 0;
+
+// Check if assistant account exists
+$hasAssistant = (int)$db->query("SELECT COUNT(*) FROM users WHERE role = 'assistant'")->fetchColumn() > 0;
 
 // System health
 $phpVersion = PHP_VERSION;
@@ -144,7 +180,7 @@ $diskFree = @disk_free_space(APP_ROOT);
 
 <!-- Password -->
 <div class="section">
-    <div class="section-header"><div class="section-title">Change Password</div></div>
+    <div class="section-header"><div class="section-title">Change Owner Password</div></div>
     <div class="section-body">
         <form method="post">
             <?= csrf_field() ?>
@@ -164,6 +200,31 @@ $diskFree = @disk_free_space(APP_ROOT);
     </div>
 </div>
 
+<!-- Assistant Account -->
+<div class="section">
+    <div class="section-header"><div class="section-title">Assistant Account</div></div>
+    <div class="section-body">
+        <p class="text-sm text-muted mb-4">
+            The assistant account can search patients, create/edit patients, add photos, manage follow-ups, and add/edit payments.
+            The assistant cannot see expenses, profit, reports, or financial exports.
+            <?php if ($hasAssistant): ?>
+            <br><br><strong>Assistant username:</strong> assistant
+            <?php endif; ?>
+        </p>
+        <form method="post">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="assistant_password">
+            <div class="form-group">
+                <label for="assistant_password"><?= $hasAssistant ? 'Set New Assistant Password' : 'Create Assistant Password' ?> (min 6 characters)</label>
+                <input type="password" id="assistant_password" name="assistant_password" required minlength="6">
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><?= $hasAssistant ? 'Update Assistant Password' : 'Create Assistant Account' ?></button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Expense Categories -->
 <div class="section">
     <div class="section-header"><div class="section-title">Expense Categories</div></div>
@@ -177,7 +238,8 @@ $diskFree = @disk_free_space(APP_ROOT);
                     <?php foreach ($categories as $c): ?>
                     <tr>
                         <td class="font-semibold"><?= e($c['name']) ?></td>
-                        <td class="text-right">
+                        <td class="text-right nowrap">
+                            <button type="button" class="btn btn-sm btn-outline" onclick="openModal('editCat<?= $c['id'] ?>')">Edit</button>
                             <form method="post" style="display:inline" onsubmit="return confirm('Delete this category?')">
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="action" value="delete_category">
@@ -199,6 +261,18 @@ $diskFree = @disk_free_space(APP_ROOT);
             </div>
             <button type="submit" class="btn btn-primary">Add Category</button>
         </form>
+    </div>
+</div>
+
+<!-- Lab & Consultant Master Lists -->
+<div class="section">
+    <div class="section-header"><div class="section-title">Labs & Consultants</div></div>
+    <div class="section-body">
+        <p class="text-sm text-muted mb-4">Manage your lab and consultant master lists used when adding expenses.</p>
+        <div class="flex gap-2 flex-wrap">
+            <a href="labs.php" class="btn btn-outline">Manage Labs (<?= count($labs) ?>)</a>
+            <a href="consultants.php" class="btn btn-outline">Manage Consultants (<?= count($consultants) ?>)</a>
+        </div>
     </div>
 </div>
 
@@ -276,5 +350,32 @@ $diskFree = @disk_free_space(APP_ROOT);
         </div>
     </div>
 </div>
+
+<!-- Edit Category Modals -->
+<?php foreach ($categories as $c): ?>
+<div class="modal-overlay" id="editCat<?= $c['id'] ?>">
+    <div class="modal">
+        <div class="modal-header">
+            <div class="modal-title">Edit Category</div>
+            <button class="modal-close" onclick="closeModal('editCat<?= $c['id'] ?>')">&times;</button>
+        </div>
+        <form method="post">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="edit_category">
+            <input type="hidden" name="cat_id" value="<?= $c['id'] ?>">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Category Name</label>
+                    <input type="text" name="cat_name" value="<?= e($c['name']) ?>" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('editCat<?= $c['id'] ?>')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+<?php endforeach; ?>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

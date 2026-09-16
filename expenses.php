@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/includes/header.php';
 
+require_owner();
+
 $db = db();
 $preset = $_GET['preset'] ?? 'month';
 $start = $_GET['start'] ?? '';

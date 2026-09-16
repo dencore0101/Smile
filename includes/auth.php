@@ -22,6 +22,14 @@ function require_auth(): void {
     }
 }
 
+function require_owner(): void {
+    require_auth();
+    if (current_role() !== 'owner') {
+        set_flash('error', 'Access denied. Owner privileges required.');
+        redirect('today.php');
+    }
+}
+
 function do_login(string $username, string $password): bool {
     init_session();
     try {
@@ -34,6 +42,7 @@ function do_login(string $username, string $password): bool {
         session_regenerate_id(true);
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['username'];
+        $_SESSION['role'] = $user['role'] ?? 'owner';
         return true;
     } catch (Throwable $e) {
         log_error('Error', 'Login failed: ' . $e->getMessage(), __FILE__, __LINE__);
@@ -66,7 +75,41 @@ function change_password(string $current, string $new): bool {
     }
 }
 
+function set_assistant_password(string $new): bool {
+    try {
+        $db = db();
+        $stmt = $db->prepare("SELECT id FROM users WHERE role = 'assistant' LIMIT 1");
+        $stmt->execute();
+        $assistant = $stmt->fetch();
+        $hash = password_hash($new, PASSWORD_DEFAULT);
+        if ($assistant) {
+            $stmt = $db->prepare('UPDATE users SET password_hash = ? WHERE id = ?');
+            $stmt->execute([$hash, $assistant['id']]);
+        } else {
+            $stmt = $db->prepare("INSERT INTO users (username, password_hash, role) VALUES (?, ?, 'assistant')");
+            $stmt->execute(['assistant', $hash]);
+        }
+        return true;
+    } catch (Throwable $e) {
+        log_error('Error', 'Set assistant password failed: ' . $e->getMessage(), __FILE__, __LINE__);
+        return false;
+    }
+}
+
 function current_username(): string {
     init_session();
     return $_SESSION['username'] ?? '';
+}
+
+function current_role(): string {
+    init_session();
+    return $_SESSION['role'] ?? 'owner';
+}
+
+function is_owner(): bool {
+    return current_role() === 'owner';
+}
+
+function is_assistant(): bool {
+    return current_role() === 'assistant';
 }

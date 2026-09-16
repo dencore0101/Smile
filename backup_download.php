@@ -6,6 +6,7 @@ require_once __DIR__ . '/includes/helpers.php';
 
 init_session();
 require_auth();
+require_owner();
 
 if (!is_dir(BACKUP_DIR)) mkdir(BACKUP_DIR, 0755, true);
 

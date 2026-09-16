@@ -18,6 +18,8 @@ function db(): PDO {
     $pdo->exec('PRAGMA foreign_keys = ON');
     $pdo->exec('PRAGMA journal_mode = WAL');
 
+    db_migrate($pdo);
+
     return $pdo;
 }
 
@@ -137,6 +139,68 @@ function db_install(PDO $pdo): void {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL UNIQUE,
         password_hash TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'owner',
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS labs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        contact TEXT,
+        notes TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS consultants (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        contact TEXT,
+        notes TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )");
+}
+
+function db_migrate(PDO $pdo): void {
+    $pdo->exec('PRAGMA foreign_keys = ON');
+
+    // Add role column to users if missing
+    $cols = $pdo->query('PRAGMA table_info(users)')->fetchAll(PDO::FETCH_ASSOC);
+    $hasRole = false;
+    foreach ($cols as $c) { if ($c['name'] === 'role') { $hasRole = true; break; } }
+    if (!$hasRole) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'owner'");
+    }
+
+    // Create labs table if missing
+    $pdo->exec("CREATE TABLE IF NOT EXISTS labs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        contact TEXT,
+        notes TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )");
+
+    // Create consultants table if missing
+    $pdo->exec("CREATE TABLE IF NOT EXISTS consultants (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        contact TEXT,
+        notes TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )");
+
+    // Add lab_id column to expenses if missing
+    $cols = $pdo->query('PRAGMA table_info(expenses)')->fetchAll(PDO::FETCH_ASSOC);
+    $hasLabId = false;
+    foreach ($cols as $c) { if ($c['name'] === 'lab_id') { $hasLabId = true; break; } }
+    if (!$hasLabId) {
+        $pdo->exec('ALTER TABLE expenses ADD COLUMN lab_id INTEGER REFERENCES labs(id) ON DELETE SET NULL');
+    }
+
+    // Add consultant_id column to expenses if missing
+    $hasConsultantId = false;
+    foreach ($cols as $c) { if ($c['name'] === 'consultant_id') { $hasConsultantId = true; break; } }
+    if (!$hasConsultantId) {
+        $pdo->exec('ALTER TABLE expenses ADD COLUMN consultant_id INTEGER REFERENCES consultants(id) ON DELETE SET NULL');
+    }
 }

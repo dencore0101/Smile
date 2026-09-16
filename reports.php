@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/includes/header.php';
 
+require_owner();
+
 $db = db();
 $preset = $_GET['preset'] ?? 'month';
 $start = $_GET['start'] ?? '';
@@ -48,7 +50,6 @@ $generalExpenses = (float)$stmt->fetchColumn();
 
 $totalExpenses = $patientExpenses + $generalExpenses;
 $netCashFlow = $collected - $totalExpenses;
-$operatingProfit = $collected - $totalExpenses;
 
 // Expense breakdown by category
 $stmt = $db->prepare("SELECT ec.name, COALESCE(SUM(e.amount), 0) AS total, COUNT(e.id) AS cnt
@@ -69,16 +70,14 @@ $stmt = $db->prepare("SELECT p.*, pt.name AS patient_name, t.name AS treatment_n
 $stmt->execute([$startDate, $endDate]);
 $payments = $stmt->fetchAll();
 
-// Treatments in period
+// Treatments in period — FIXED: use correlated subqueries instead of JOIN+GROUP BY to avoid double-counting
 $stmt = $db->prepare("SELECT t.*, p.name AS patient_name,
-                      COALESCE(SUM(pay.amount), 0) AS paid,
-                      COALESCE(SUM(ex.amount), 0) AS expenses
+                      (SELECT COALESCE(SUM(pay.amount), 0) FROM payments pay WHERE pay.treatment_id = t.id AND pay.deleted_at IS NULL) AS paid,
+                      (SELECT COALESCE(SUM(ex.amount), 0) FROM expenses ex WHERE ex.treatment_id = t.id AND ex.deleted_at IS NULL) AS expenses
                       FROM treatments t
                       JOIN patients p ON t.patient_id = p.id
-                      LEFT JOIN payments pay ON pay.treatment_id = t.id AND pay.deleted_at IS NULL
-                      LEFT JOIN expenses ex ON ex.treatment_id = t.id AND ex.deleted_at IS NULL
                       WHERE t.start_date BETWEEN ? AND ?
-                      GROUP BY t.id ORDER BY t.start_date DESC");
+                      ORDER BY t.start_date DESC");
 $stmt->execute([$startDate, $endDate]);
 $treatments = $stmt->fetchAll();
 
@@ -210,7 +209,7 @@ if (isset($_GET['export'])) {
                         <th class="text-right">Cost</th>
                         <th class="text-right">Paid</th>
                         <th class="text-right">Expenses</th>
-                        <th class="text-right">Margin</th>
+                        <th class="text-right">Treatment Margin</th>
                         <th>Status</th>
                     </tr>
                 </thead>

@@ -15,30 +15,6 @@ $stmt = $db->prepare("SELECT f.*, p.name AS patient_name, p.patient_id AS patien
 $stmt->execute([$today]);
 $today_followups = $stmt->fetchAll();
 
-// Today's collection
-$stmt = $db->prepare("SELECT COALESCE(SUM(amount), 0) FROM payments
-                      WHERE payment_date = ? AND deleted_at IS NULL");
-$stmt->execute([$today]);
-$today_collection = (float)$stmt->fetchColumn();
-
-// Today's expenses
-$stmt = $db->prepare("SELECT COALESCE(SUM(amount), 0) FROM expenses
-                      WHERE expense_date = ? AND deleted_at IS NULL");
-$stmt->execute([$today]);
-$today_expenses = (float)$stmt->fetchColumn();
-
-$today_net = $today_collection - $today_expenses;
-
-// Today's expenses detail
-$stmt = $db->prepare("SELECT e.*, ec.name AS category_name, p.name AS patient_name
-                      FROM expenses e
-                      JOIN expense_categories ec ON e.category_id = ec.id
-                      LEFT JOIN patients p ON e.patient_id = p.id
-                      WHERE e.expense_date = ? AND e.deleted_at IS NULL
-                      ORDER BY e.created_at DESC");
-$stmt->execute([$today]);
-$today_expense_list = $stmt->fetchAll();
-
 // Today's payments detail
 $stmt = $db->prepare("SELECT p.*, pt.name AS patient_name, pt.patient_id AS patient_code,
                       t.name AS treatment_name
@@ -49,6 +25,32 @@ $stmt = $db->prepare("SELECT p.*, pt.name AS patient_name, pt.patient_id AS pati
                       ORDER BY p.created_at DESC");
 $stmt->execute([$today]);
 $today_payments = $stmt->fetchAll();
+
+$showFinancials = is_owner();
+
+if ($showFinancials) {
+    // Today's collection
+    $stmt = $db->prepare("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE payment_date = ? AND deleted_at IS NULL");
+    $stmt->execute([$today]);
+    $today_collection = (float)$stmt->fetchColumn();
+
+    // Today's expenses
+    $stmt = $db->prepare("SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE expense_date = ? AND deleted_at IS NULL");
+    $stmt->execute([$today]);
+    $today_expenses = (float)$stmt->fetchColumn();
+
+    $today_net = $today_collection - $today_expenses;
+
+    // Today's expenses detail
+    $stmt = $db->prepare("SELECT e.*, ec.name AS category_name, p.name AS patient_name
+                          FROM expenses e
+                          JOIN expense_categories ec ON e.category_id = ec.id
+                          LEFT JOIN patients p ON e.patient_id = p.id
+                          WHERE e.expense_date = ? AND e.deleted_at IS NULL
+                          ORDER BY e.created_at DESC");
+    $stmt->execute([$today]);
+    $today_expense_list = $stmt->fetchAll();
+}
 ?>
 <h1>SMILE</h1>
 <div class="subtitle"><?= e(today_date_long()) ?></div>
@@ -57,10 +59,13 @@ $today_payments = $stmt->fetchAll();
     <a href="patient_new.php" class="btn btn-primary">+ New Patient</a>
     <a href="patients.php" class="btn btn-outline">Search Patient</a>
     <a href="payment_new.php" class="btn btn-outline">+ Add Payment</a>
+    <?php if ($showFinancials): ?>
     <a href="expense_new.php" class="btn btn-outline">+ Add Expense</a>
+    <?php endif; ?>
     <a href="followup_new.php" class="btn btn-outline">+ Add Follow-up</a>
 </div>
 
+<?php if ($showFinancials): ?>
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-label">Today's Collection</div>
@@ -71,10 +76,11 @@ $today_payments = $stmt->fetchAll();
         <div class="stat-value negative"><?= format_money($today_expenses) ?></div>
     </div>
     <div class="stat-card">
-        <div class="stat-label">Today's Net</div>
+        <div class="stat-label">Today's Net Cash Flow</div>
         <div class="stat-value <?= $today_net >= 0 ? 'positive' : 'negative' ?>"><?= format_money($today_net) ?></div>
     </div>
 </div>
+<?php endif; ?>
 
 <div class="section">
     <div class="section-header">
@@ -145,6 +151,7 @@ $today_payments = $stmt->fetchAll();
     </div>
 </div>
 
+<?php if ($showFinancials): ?>
 <div class="section">
     <div class="section-header"><div class="section-title">Today's Expenses</div></div>
     <div class="section-body">
@@ -176,5 +183,6 @@ $today_payments = $stmt->fetchAll();
         <?php endif; ?>
     </div>
 </div>
+<?php endif; ?>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

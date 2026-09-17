@@ -203,4 +203,20 @@ function db_migrate(PDO $pdo): void {
     if (!$hasConsultantId) {
         $pdo->exec('ALTER TABLE expenses ADD COLUMN consultant_id INTEGER REFERENCES consultants(id) ON DELETE SET NULL');
     }
+
+    // Create lab_work table if missing
+    $pdo->exec("CREATE TABLE IF NOT EXISTS lab_work (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+        treatment_id INTEGER REFERENCES treatments(id) ON DELETE SET NULL,
+        lab_id INTEGER NOT NULL REFERENCES labs(id) ON DELETE RESTRICT,
+        description TEXT NOT NULL,
+        date_sent TEXT NOT NULL,
+        expected_delivery_date TEXT,
+        status TEXT NOT NULL DEFAULT 'Pending',
+        actual_arrival_date TEXT,
+        note TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )");
 }

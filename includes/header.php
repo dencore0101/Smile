@@ -19,6 +19,7 @@ $nav_items = [
     'today' => 'Today',
     'patients' => 'Patients',
     'followups' => 'Follow-ups',
+    'lab_work' => 'Lab Work',
 ];
 if (is_owner()) {
     $nav_items['expenses'] = 'Expenses';

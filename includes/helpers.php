@@ -224,6 +224,28 @@ function csv_output(string $filename, array $rows, array $headers): void {
     exit;
 }
 
+function normalize_whatsapp_number(string $raw): ?string {
+    $stripped = preg_replace('/[^0-9+]/', '', $raw);
+    if ($stripped === '' || $stripped === '+') return null;
+
+    if (strpos($stripped, '+91') === 0) {
+        $digits = substr($stripped, 3);
+    } elseif (strpos($stripped, '+') === 0) {
+        return null;
+    } elseif (strlen($stripped) === 12 && substr($stripped, 0, 2) === '91') {
+        $digits = substr($stripped, 2);
+    } elseif (strlen($stripped) === 13 && $stripped[0] === '0' && substr($stripped, 1, 2) === '91') {
+        $digits = substr($stripped, 3);
+    } elseif (strlen($stripped) === 11 && $stripped[0] === '0') {
+        $digits = substr($stripped, 1);
+    } else {
+        $digits = $stripped;
+    }
+
+    if (strlen($digits) !== 10 || !preg_match('/^\d{10}$/', $digits)) return null;
+    return '91' . $digits;
+}
+
 function google_cal_link(array $fu): string {
     $title = $fu['patient_name'] ?? 'Follow-up';
     if (!empty($fu['treatment_name'])) $title .= ' — ' . $fu['treatment_name'];

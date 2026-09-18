@@ -67,17 +67,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php if ($patientId): ?>
             <input type="hidden" name="patient_id" value="<?= $patientId ?>">
         <?php else: ?>
-            <div class="form-group">
-                <label for="patient_id">Patient *</label>
-                <select id="patient_id" name="patient_id" required>
-                    <option value="">Select patient...</option>
-                    <?php
-                    $allPatients = db()->query("SELECT id, name, patient_id FROM patients ORDER BY name")->fetchAll();
-                    foreach ($allPatients as $p): ?>
-                    <option value="<?= $p['id'] ?>"><?= e($p['name']) ?> (<?= e($p['patient_id']) ?>)</option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+            <?php $allPatients = db()->query("SELECT id, name, patient_id, mobile FROM patients ORDER BY name")->fetchAll(); ?>
+            <?= patient_picker_field($allPatients) ?>
         <?php endif; ?>
         <?php if (!empty($treatments) && !$treatmentId): ?>
             <div class="form-group">

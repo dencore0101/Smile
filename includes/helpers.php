@@ -224,6 +224,34 @@ function csv_output(string $filename, array $rows, array $headers): void {
     exit;
 }
 
+function patient_picker_field(array $patients, string $fieldName = 'patient_id'): string {
+    $html = '<div class="form-group">';
+    $html .= '<label for="' . $fieldName . '_search">Patient *</label>';
+    $html .= '<div class="patient-picker">';
+    $html .= '<input type="text" id="' . $fieldName . '_search" placeholder="Type patient name or phone..." autocomplete="off" />';
+    $html .= '<input type="hidden" id="' . $fieldName . '" name="' . $fieldName . '" />';
+    $html .= '<div class="patient-picker-dropdown" id="' . $fieldName . '_dropdown"></div>';
+    $html .= '</div>';
+    $html .= '</div>';
+    $html .= '<script>(function(){';
+    $html .= 'var patients=' . json_encode(array_map(function($p) {
+        return ['id' => (int)$p['id'], 'label' => $p['name'] . ' (' . $p['patient_id'] . ')', 'search' => strtolower($p['name'] . ' ' . ($p['mobile'] ?? '') . ' ' . $p['patient_id'])];
+    }, $patients)) . ';';
+    $html .= 'var search=document.getElementById("' . $fieldName . '_search");';
+    $html .= 'var hidden=document.getElementById("' . $fieldName . '");';
+    $html .= 'var dd=document.getElementById("' . $fieldName . '_dropdown");';
+    $html .= 'function render(q){dd.innerHTML="";var f=patients.filter(function(p){return p.search.indexOf(q)>=0;});';
+    $html .= 'if(!f.length){dd.innerHTML=\'<div class="patient-picker-empty">No matching patients</div>\';dd.classList.add("open");return;}';
+    $html .= 'f.forEach(function(p){var d=document.createElement("div");d.className="patient-picker-item";d.innerHTML=e(p.label);';
+    $html .= 'd.onclick=function(){search.value=p.label;hidden.value=p.id;dd.classList.remove("open");};dd.appendChild(d);});dd.classList.add("open");}';
+    $html .= 'function e(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}';
+    $html .= 'search.addEventListener("input",function(){render(this.value.toLowerCase());});';
+    $html .= 'search.addEventListener("focus",function(){if(this.value)render(this.value.toLowerCase());else render("");});';
+    $html .= 'document.addEventListener("click",function(ev){if(!ev.target.closest(".patient-picker"))dd.classList.remove("open");});';
+    $html .= '})();</script>';
+    return $html;
+}
+
 function normalize_whatsapp_number(string $raw): ?string {
     $stripped = preg_replace('/[^0-9+]/', '', $raw);
     if ($stripped === '' || $stripped === '+') return null;

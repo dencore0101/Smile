@@ -503,6 +503,42 @@ tr:hover td { background: var(--gray-50); }
     margin-top: 2px;
 }
 
+/* Patient picker */
+.patient-picker { position: relative; }
+.patient-picker input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius);
+    font-size: 14px;
+    box-sizing: border-box;
+}
+.patient-picker input:focus { outline: none; border-color: var(--primary); }
+.patient-picker-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%; left: 0; right: 0;
+    max-height: 240px;
+    overflow-y: auto;
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: 0 0 var(--radius) var(--radius);
+    border-top: none;
+    z-index: 50;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.patient-picker-dropdown.open { display: block; }
+.patient-picker-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    border-bottom: 1px solid var(--gray-100);
+}
+.patient-picker-item:hover { background: var(--gray-50); }
+.patient-picker-item:last-child { border-bottom: none; }
+.patient-picker-item .pp-code { color: var(--gray-400); font-size: 12px; font-family: var(--mono); }
+.patient-picker-empty { padding: 10px 12px; color: var(--gray-400); font-size: 13px; }
+
 /* Empty state */
 .empty-state {
     text-align: center;

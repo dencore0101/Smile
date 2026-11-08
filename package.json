@@ -1,5 +1,8 @@
 {
   "name": "project",
   "version": "1.0.0",
-  "private": true
+  "private": true,
+  "scripts": {
+    "build": "node -e \"console.log('PHP application: no build step required')\""
+  }
 }

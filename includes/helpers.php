@@ -79,6 +79,30 @@ function patient_total_expenses(int $patientId): float {
     return (float)$stmt->fetchColumn();
 }
 
+function patient_open_summary(int $patientId): array {
+    $stmt = db()->prepare("SELECT COUNT(*) FROM treatments WHERE patient_id = ? AND status <> 'Closed'");
+    $stmt->execute([$patientId]);
+    return [
+        'open_treatments' => (int)$stmt->fetchColumn(),
+        'balance' => patient_total_cost($patientId) - patient_total_paid($patientId),
+    ];
+}
+
+function patient_complete_message(array $patient, array $summary): string {
+    $warnings = [];
+    if ($summary['open_treatments'] > 0) {
+        $warnings[] = $summary['open_treatments'] . ' open treatment' . ($summary['open_treatments'] === 1 ? '' : 's');
+    }
+    if ($summary['balance'] > 0) {
+        $warnings[] = 'an unpaid balance of ' . format_money($summary['balance']);
+    }
+    $msg = 'Mark ' . $patient['name'] . ' as completed?';
+    if ($warnings) {
+        $msg .= "\n\nWarning: this patient has " . implode(' and ', $warnings) . '.';
+    }
+    return $msg . "\n\nNothing will be deleted. The patient moves to Completed and can be reopened later.";
+}
+
 function get_expense_categories(): array {
     $db = db();
     return $db->query('SELECT * FROM expense_categories ORDER BY name')->fetchAll();

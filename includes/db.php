@@ -219,4 +219,46 @@ function db_migrate(PDO $pdo): void {
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     )");
+
+    // Patient lifecycle: status, completion time, and activity timestamp for list sorting
+    $cols = $pdo->query('PRAGMA table_info(patients)')->fetchAll(PDO::FETCH_ASSOC);
+    $names = array_column($cols, 'name');
+    if (!in_array('status', $names, true)) {
+        $pdo->exec("ALTER TABLE patients ADD COLUMN status TEXT NOT NULL DEFAULT 'Active'");
+    }
+    if (!in_array('completed_at', $names, true)) {
+        $pdo->exec('ALTER TABLE patients ADD COLUMN completed_at TEXT');
+    }
+    if (!in_array('last_activity_at', $names, true)) {
+        $pdo->exec('ALTER TABLE patients ADD COLUMN last_activity_at TEXT');
+        $pdo->exec("UPDATE patients SET last_activity_at = COALESCE(updated_at, created_at, datetime('now'))");
+    }
+    $pdo->exec("CREATE INDEX IF NOT EXISTS idx_patients_status ON patients(status)");
+    $pdo->exec("CREATE INDEX IF NOT EXISTS idx_patients_activity ON patients(last_activity_at)");
+
+    db_create_activity_triggers($pdo);
+}
+
+function db_create_activity_triggers(PDO $pdo): void {
+    $touch = "UPDATE patients SET last_activity_at = datetime('now') WHERE id = ";
+    $pdo->exec("CREATE TRIGGER IF NOT EXISTS trg_activity_patient_insert AFTER INSERT ON patients
+        BEGIN UPDATE patients SET last_activity_at = datetime('now') WHERE id = NEW.id; END");
+    $pdo->exec("CREATE TRIGGER IF NOT EXISTS trg_activity_patient_update AFTER UPDATE OF name, mobile, age_or_dob, gender, basic_details, free_notes ON patients
+        BEGIN UPDATE patients SET last_activity_at = datetime('now') WHERE id = NEW.id; END");
+    $pdo->exec("CREATE TRIGGER IF NOT EXISTS trg_activity_treatment_insert AFTER INSERT ON treatments
+        BEGIN {$touch}NEW.patient_id; END");
+    $pdo->exec("CREATE TRIGGER IF NOT EXISTS trg_activity_treatment_update AFTER UPDATE ON treatments
+        BEGIN {$touch}NEW.patient_id; END");
+    $pdo->exec("CREATE TRIGGER IF NOT EXISTS trg_activity_payment_insert AFTER INSERT ON payments
+        BEGIN {$touch}NEW.patient_id; END");
+    $pdo->exec("CREATE TRIGGER IF NOT EXISTS trg_activity_payment_update AFTER UPDATE ON payments
+        BEGIN {$touch}NEW.patient_id; END");
+    $pdo->exec("CREATE TRIGGER IF NOT EXISTS trg_activity_photo_insert AFTER INSERT ON patient_photos
+        BEGIN {$touch}NEW.patient_id; END");
+    $pdo->exec("CREATE TRIGGER IF NOT EXISTS trg_activity_photo_update AFTER UPDATE ON patient_photos
+        BEGIN {$touch}NEW.patient_id; END");
+    $pdo->exec("CREATE TRIGGER IF NOT EXISTS trg_activity_followup_insert AFTER INSERT ON followups
+        BEGIN {$touch}NEW.patient_id; END");
+    $pdo->exec("CREATE TRIGGER IF NOT EXISTS trg_activity_followup_update AFTER UPDATE ON followups
+        BEGIN {$touch}NEW.patient_id; END");
 }

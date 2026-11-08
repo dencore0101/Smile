@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/photo_processing.php';
 
 $patientId = (int)($_GET['patient_id'] ?? $_POST['patient_id'] ?? 0);
 $treatmentId = (int)($_GET['treatment_id'] ?? $_POST['treatment_id'] ?? 0);
@@ -50,7 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $destPath = $patientDir . '/' . $filename;
 
             if (move_uploaded_file($file['tmp_name'], $destPath)) {
-                $relPath = $patientId . '/' . $filename;
+                $storedName = process_uploaded_photo($destPath, $mimeType) ?? $filename;
+                $relPath = $patientId . '/' . $storedName;
                 $db = db();
                 $stmt = $db->prepare("INSERT INTO patient_photos (patient_id, treatment_id, file_path, note) VALUES (?, ?, ?, ?)");
                 $stmt->execute([$patientId, $treatmentId ?: null, $relPath, $note]);

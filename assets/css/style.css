@@ -594,6 +594,128 @@ tr:hover td { background: var(--gray-50); }
     margin: 20px auto;
 }
 
+/* Patient task list */
+.patient-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+.patient-toolbar .search-box { flex: 1 1 240px; margin-bottom: 0; }
+.patient-toolbar select { width: auto; min-width: 150px; }
+.task-section { margin-bottom: 24px; }
+.task-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--gray-500);
+    padding: 8px 4px;
+}
+.task-count {
+    background: var(--gray-100);
+    color: var(--gray-700);
+    border-radius: 999px;
+    padding: 0 8px;
+    font-size: 12px;
+}
+.task-list {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+}
+.task-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--gray-100);
+    transition: background 0.15s;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: var(--gray-50); }
+.task-row.is-completed .task-title > span:first-child { color: var(--gray-500); }
+.task-action { margin: 0; flex-shrink: 0; }
+.task-check {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--gray-300);
+    background: var(--white);
+    cursor: pointer;
+    padding: 0;
+    transition: border-color 0.15s, background 0.15s;
+}
+.task-check:hover { border-color: var(--primary); background: var(--gray-50); }
+.task-main {
+    flex: 1;
+    min-width: 0;
+    display: block;
+    color: inherit;
+    text-decoration: none;
+}
+.task-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+}
+.task-code { font-size: 12px; color: var(--gray-500); font-weight: 400; }
+.task-sub {
+    font-size: 13px;
+    color: var(--gray-500);
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.task-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #fef3c7;
+    color: #92400e;
+}
+.task-balance { font-size: 14px; font-weight: 600; white-space: nowrap; }
+.task-menu { position: relative; flex-shrink: 0; }
+.task-menu summary {
+    list-style: none;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--gray-700);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 4px 10px;
+}
+.task-menu summary::-webkit-details-marker { display: none; }
+.task-menu-panel {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 4px;
+    min-width: 180px;
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    padding: 4px 0;
+    z-index: 20;
+}
+.task-menu-panel a {
+    display: block;
+    padding: 8px 12px;
+    font-size: 14px;
+    color: var(--gray-800);
+    text-decoration: none;
+}
+.task-menu-panel a:hover { background: var(--gray-50); }
+
 /* Mobile */
 @media (max-width: 640px) {
     .container { padding: 16px 12px 60px; }

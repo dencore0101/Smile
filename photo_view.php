@@ -3,6 +3,7 @@ require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/helpers.php';
+require_once __DIR__ . '/includes/photo_processing.php';
 
 init_session();
 require_auth();
@@ -20,7 +21,11 @@ if (!$photo) {
     exit;
 }
 
-$filePath = PHOTO_DIR . '/' . $photo['file_path'];
+$relPath = $photo['file_path'];
+if (isset($_GET['thumb']) && file_exists(PHOTO_DIR . '/' . photo_thumb_relpath($relPath))) {
+    $relPath = photo_thumb_relpath($relPath);
+}
+$filePath = PHOTO_DIR . '/' . $relPath;
 if (!file_exists($filePath)) {
     http_response_code(404);
     echo 'File not found.';

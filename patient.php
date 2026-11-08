@@ -18,6 +18,7 @@ $totalPaid = patient_total_paid($id);
 $balance = $totalCost - $totalPaid;
 
 $isOwner = is_owner();
+$summary = patient_open_summary($id);
 
 // Only fetch expense data for owner
 if ($isOwner) {
@@ -77,6 +78,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <a href="expense_new.php?patient_id=<?= $id ?>" class="btn btn-outline btn-sm">+ Add Expense</a>
         <?php endif; ?>
         <button type="button" class="btn btn-outline btn-sm" onclick="openModal('editBasicModal')">Edit Details</button>
+    </div>
+    <div class="mt-2">
+        <?php if ($patient['status'] === 'Completed'): ?>
+        <form method="post" action="patient_status.php" class="flex gap-2 flex-wrap">
+            <?= csrf_field() ?>
+            <input type="hidden" name="patient_id" value="<?= $id ?>">
+            <input type="hidden" name="action" value="reopen">
+            <input type="hidden" name="back" value="patient.php?id=<?= $id ?>">
+            <span class="text-sm text-muted">Completed on <?= e(format_date(substr($patient['completed_at'] ?? '', 0, 10))) ?></span>
+            <button type="submit" class="btn btn-outline btn-sm">Reopen Patient</button>
+        </form>
+        <?php else: ?>
+        <form method="post" action="patient_status.php"
+              onsubmit="return confirm(this.dataset.confirm)"
+              data-confirm="<?= e(patient_complete_message($patient, $summary)) ?>">
+            <?= csrf_field() ?>
+            <input type="hidden" name="patient_id" value="<?= $id ?>">
+            <input type="hidden" name="action" value="complete">
+            <input type="hidden" name="back" value="patient.php?id=<?= $id ?>">
+            <button type="submit" class="btn btn-outline btn-sm">Complete Patient</button>
+        </form>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -145,7 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="photo-grid">
                 <?php foreach ($photos as $photo): ?>
                 <div class="photo-item">
-                    <img src="photo_view.php?id=<?= $photo['id'] ?>" alt="Patient photo" onclick="window.open('photo_view.php?id=<?= $photo['id'] ?>&full=1', '_blank')">
+                    <img src="photo_view.php?id=<?= $photo['id'] ?>&thumb=1" alt="Patient photo" onclick="window.open('photo_view.php?id=<?= $photo['id'] ?>&full=1', '_blank')">
                     <div class="photo-info">
                         <div class="photo-note"><?= e($photo['note'] ?? '') ?></div>
                         <div class="photo-date"><?= format_date($photo['uploaded_at']) ?></div>
@@ -357,7 +380,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="photo-grid mb-4">
                         <?php foreach ($tPhotos as $photo): ?>
                         <div class="photo-item">
-                            <img src="photo_view.php?id=<?= $photo['id'] ?>" alt="Treatment photo" onclick="window.open('photo_view.php?id=<?= $photo['id'] ?>&full=1', '_blank')">
+                            <img src="photo_view.php?id=<?= $photo['id'] ?>&thumb=1" alt="Treatment photo" onclick="window.open('photo_view.php?id=<?= $photo['id'] ?>&full=1', '_blank')">
                             <div class="photo-info">
                                 <div class="photo-note"><?= e($photo['note'] ?? '') ?></div>
                                 <div class="photo-date"><?= format_date($photo['uploaded_at']) ?></div>

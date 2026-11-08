@@ -3,6 +3,7 @@ require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/helpers.php';
+require_once __DIR__ . '/includes/photo_processing.php';
 
 init_session();
 require_auth();
@@ -26,6 +27,10 @@ if (!$photo) {
 $filePath = PHOTO_DIR . '/' . $photo['file_path'];
 if (file_exists($filePath)) {
     unlink($filePath);
+}
+$thumbPath = PHOTO_DIR . '/' . photo_thumb_relpath($photo['file_path']);
+if (file_exists($thumbPath)) {
+    unlink($thumbPath);
 }
 
 // Delete record

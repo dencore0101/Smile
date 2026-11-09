@@ -85,4 +85,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </form>
 </div>
 
+<div class="mt-4"><?= followup_delete_form($id, 'patient.php?id=' . $followup['patient_id']) ?></div>
+
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

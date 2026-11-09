@@ -95,7 +95,7 @@ $followups = $stmt->fetchAll();
                             <span class="badge badge-<?= strtolower($f['status']) ?>"><?= e($f['status']) ?></span>
                         <?php endif; ?>
                     </td>
-                    <td onclick="event.stopPropagation()"><a href="followup_edit.php?id=<?= $f['id'] ?>" class="btn btn-sm btn-outline">Edit</a></td>
+                    <td onclick="event.stopPropagation()"><a href="followup_edit.php?id=<?= $f['id'] ?>" class="btn btn-sm btn-outline">Edit</a> <?= followup_delete_form((int)$f['id'], 'followups.php?' . http_build_query(['view' => $view])) ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

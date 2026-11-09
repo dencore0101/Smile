@@ -79,6 +79,15 @@ function patient_total_expenses(int $patientId): float {
     return (float)$stmt->fetchColumn();
 }
 
+function followup_delete_form(int $followupId, string $back): string {
+    return '<form method="post" action="followup_delete.php" style="display:inline" onsubmit="return confirm(\'Delete this follow-up? This cannot be undone.\')">'
+        . csrf_field()
+        . '<input type="hidden" name="id" value="' . $followupId . '">'
+        . '<input type="hidden" name="back" value="' . e($back) . '">'
+        . '<button type="submit" class="btn btn-sm btn-outline">Delete</button>'
+        . '</form>';
+}
+
 function patient_open_summary(int $patientId): array {
     $stmt = db()->prepare("SELECT COUNT(*) FROM treatments WHERE patient_id = ? AND status <> 'Closed'");
     $stmt->execute([$patientId]);

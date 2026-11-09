@@ -18,6 +18,7 @@ $sortKey = $_GET['sort'] ?? 'recent';
 if (!isset($sortOptions[$sortKey])) {
     $sortKey = 'recent';
 }
+$viewMode = ($_GET['view'] ?? 'list') === 'table' ? 'table' : 'list';
 
 $where = [];
 $params = [];
@@ -56,7 +57,7 @@ foreach ($patients as $p) {
     $groups[$p['status']][] = $p;
 }
 
-$listBack = 'patients.php?' . http_build_query(['q' => $search, 'status' => $statusFilter, 'sort' => $sortKey]);
+$listBack = 'patients.php?' . http_build_query(['q' => $search, 'status' => $statusFilter, 'sort' => $sortKey, 'view' => $viewMode]);
 ?>
 <h1>Patients</h1>
 
@@ -80,6 +81,46 @@ $listBack = 'patients.php?' . http_build_query(['q' => $search, 'status' => $sta
     </select>
     <noscript><button type="submit" class="btn btn-outline btn-sm">Apply</button></noscript>
 </form>
+
+<div class="view-toggle">
+    <a href="?<?= e(http_build_query(['q' => $search, 'status' => $statusFilter, 'sort' => $sortKey, 'view' => 'list'])) ?>" class="tab <?= $viewMode === 'list' ? 'active' : '' ?>">List</a>
+    <a href="?<?= e(http_build_query(['q' => $search, 'status' => $statusFilter, 'sort' => $sortKey, 'view' => 'table'])) ?>" class="tab <?= $viewMode === 'table' ? 'active' : '' ?>">Table</a>
+</div>
+
+<?php if ($viewMode === 'table' && !empty($patients)): ?>
+<div class="table-wrap">
+    <table class="table-clickable">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Patient ID</th>
+                <th>Mobile</th>
+                <th>Last treatment</th>
+                <th class="text-right">Open treatments</th>
+                <th class="text-right">Balance</th>
+                <th>Next follow-up</th>
+                <th>Last activity</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($patients as $p): ?>
+            <tr onclick="window.location='patient.php?id=<?= (int)$p['id'] ?>'">
+                <td><?= e($p['name']) ?></td>
+                <td class="font-mono text-sm"><?= e($p['patient_id']) ?></td>
+                <td class="text-sm"><?= e($p['mobile']) ?></td>
+                <td class="text-sm"><?= e($p['last_treatment'] ?? '—') ?></td>
+                <td class="text-right"><?= (int)$p['open_treatments'] ?></td>
+                <td class="text-right <?= $p['balance'] > 0 ? 'text-danger' : '' ?>"><?= format_money($p['balance']) ?></td>
+                <td class="nowrap"><?= $p['next_followup'] ? e(format_date($p['next_followup'])) : '—' ?></td>
+                <td class="nowrap text-sm"><?= $p['last_activity_at'] ? e(format_date(substr($p['last_activity_at'], 0, 10))) : '—' ?></td>
+                <td><?= e($p['status']) ?></td>
+            </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</div>
+<?php elseif ($viewMode === 'list'): ?>
 
 <?php if (empty($patients)): ?>
     <div class="empty-state">
@@ -154,5 +195,6 @@ $listBack = 'patients.php?' . http_build_query(['q' => $search, 'status' => $sta
         </div>
     </section>
 <?php endforeach; ?>
+<?php endif; ?>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

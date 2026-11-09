@@ -411,7 +411,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <td class="text-sm"><?= e($f['time'] ? date('g:i A', strtotime($f['time'])) : '—') ?></td>
                                     <td class="text-sm"><?= e($f['reason'] ?? '') ?></td>
                                     <td><span class="badge badge-<?= strtolower($f['status']) ?>"><?= e($f['status']) ?></span></td>
-                                    <td><a href="followup_edit.php?id=<?= $f['id'] ?>" class="btn btn-sm btn-outline">Edit</a></td>
+                                    <td><a href="followup_edit.php?id=<?= $f['id'] ?>" class="btn btn-sm btn-outline">Edit</a> <?= followup_delete_form((int)$f['id'], 'patient.php?id=' . (int)$id) ?></td>
                                 </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -553,7 +553,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <td class="text-sm text-muted"><?= e($f['treatment_name'] ?? '—') ?></td>
                             <td class="text-sm"><?= e($f['reason'] ?? '') ?></td>
                             <td><span class="badge badge-<?= strtolower($f['status']) ?>"><?= e($f['status']) ?></span></td>
-                            <td><a href="followup_edit.php?id=<?= $f['id'] ?>" class="btn btn-sm btn-outline">Edit</a></td>
+                            <td><a href="followup_edit.php?id=<?= $f['id'] ?>" class="btn btn-sm btn-outline">Edit</a> <?= followup_delete_form((int)$f['id'], 'patient.php?id=' . (int)$id) ?></td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
